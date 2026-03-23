@@ -22,13 +22,13 @@ import {
   type ToolExecuteConfirmationDetails,
   type PolicyUpdateOptions,
   type ToolLiveOutput,
+  type ExecuteOptions,
 } from './tools.js';
 
 import { getErrorMessage } from '../utils/errors.js';
 import { summarizeToolOutput } from '../utils/summarizer.js';
 import {
   ShellExecutionService,
-  type ShellExecutionConfig,
   type ShellOutputEvent,
 } from '../services/shellExecutionService.js';
 import { formatBytes } from '../utils/formatters.js';
@@ -100,10 +100,12 @@ export class ShellToolInvocation extends BaseToolInvocation<
     ) {
       const command = stripShellWrapper(this.params.command);
       const rootCommands = [...new Set(getCommandRoots(command))];
+      const allowRedirection = hasRedirection(command) ? true : undefined;
+
       if (rootCommands.length > 0) {
-        return { commandPrefix: rootCommands };
+        return { commandPrefix: rootCommands, allowRedirection };
       }
-      return { commandPrefix: this.params.command };
+      return { commandPrefix: this.params.command, allowRedirection };
     }
     return undefined;
   }
@@ -150,9 +152,9 @@ export class ShellToolInvocation extends BaseToolInvocation<
   async execute(
     signal: AbortSignal,
     updateOutput?: (output: ToolLiveOutput) => void,
-    shellExecutionConfig?: ShellExecutionConfig,
-    setExecutionIdCallback?: (executionId: number) => void,
+    options?: ExecuteOptions,
   ): Promise<ToolResult> {
+    const { shellExecutionConfig, setExecutionIdCallback } = options ?? {};
     const strippedCommand = stripShellWrapper(this.params.command);
 
     if (signal.aborted) {
