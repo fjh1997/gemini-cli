@@ -8,6 +8,7 @@ import type React from 'react';
 import { useState, useEffect } from 'react';
 import { Text } from 'ink';
 import { debugState } from '../debug.js';
+import { useSettings } from '../contexts/SettingsContext.js';
 
 // Dot bitmasks and character assignments for the 4x4 circle perimeter
 // Char 0 corresponds to the first Braille character (c1), Char 1 to the second (c2).
@@ -56,8 +57,12 @@ export const BrailleAnimation: React.FC<BrailleAnimationProps> = ({
   interval = 80,
 }) => {
   const [tick, setTick] = useState(0);
+  const settings = useSettings();
+  const shouldShow = settings.merged.ui?.showSpinner !== false;
 
   useEffect(() => {
+    if (!shouldShow) return;
+
     debugState.debugNumAnimatedComponents++;
 
     const timer = setInterval(() => {
@@ -68,7 +73,7 @@ export const BrailleAnimation: React.FC<BrailleAnimationProps> = ({
       debugState.debugNumAnimatedComponents--;
       clearInterval(timer);
     };
-  }, [interval]);
+  }, [interval, shouldShow]);
 
   const getLength = () => {
     const cycle = Math.floor(tick / 8);
@@ -89,6 +94,10 @@ export const BrailleAnimation: React.FC<BrailleAnimationProps> = ({
   };
 
   const getFrame = () => {
+    if (!shouldShow) {
+      return '...';
+    }
+
     if (variant === 'Static') {
       return '⢎⡱';
     }

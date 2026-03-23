@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { render } from '../../test-utils/render.js';
+import { renderWithProviders } from '../../test-utils/render.js';
 import { BrailleAnimation } from './BrailleAnimation.js';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act } from 'react';
@@ -19,7 +19,7 @@ describe('BrailleAnimation', () => {
   });
 
   it('should grow from length 1 to 5 and match verification frames', async () => {
-    const { lastFrameRaw, waitUntilReady } = render(
+    const { lastFrameRaw, waitUntilReady } = renderWithProviders(
       <BrailleAnimation interval={100} variant="Long" />,
     );
     await waitUntilReady();
@@ -70,7 +70,7 @@ describe('BrailleAnimation', () => {
   });
 
   it('should support "Composite" variant with dynamic lengths', async () => {
-    const { lastFrameRaw, waitUntilReady } = render(
+    const { lastFrameRaw, waitUntilReady } = renderWithProviders(
       <BrailleAnimation interval={100} variant="Composite" />,
     );
     await waitUntilReady();

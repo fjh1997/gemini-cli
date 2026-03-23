@@ -11,7 +11,7 @@ import os from 'node:os';
 import path from 'node:path';
 import fs from 'node:fs';
 import { AppContainer } from '../ui/AppContainer.js';
-import { renderWithProviders } from './render.js';
+import { renderWithProviders, persistentStateMock } from './render.js';
 import {
   makeFakeConfig,
   type Config,
@@ -127,12 +127,40 @@ class MockExtensionManager extends ExtensionLoader {
   };
 }
 
+// Mock terminalCapabilityManager to avoid terminal setup prompt during tests
+vi.mock('../ui/utils/terminalCapabilityManager.js', async (importOriginal) => {
+  const actual =
+    await importOriginal<
+      typeof import('../ui/utils/terminalCapabilityManager.js')
+    >();
+  return {
+    ...actual,
+    terminalCapabilityManager: {
+      ...actual.terminalCapabilityManager,
+      isKittyProtocolEnabled: () => true,
+      enableKittyProtocol: vi.fn(),
+      disableKittyProtocol: vi.fn(),
+      enableSupportedModes: vi.fn(),
+      disableSupportedModes: vi.fn(),
+      onSupportChange: vi.fn(),
+      offSupportChange: vi.fn(),
+    },
+  };
+});
+
+vi.mock('../ui/components/GeminiSpinner.js', async () => {
+  const React = await import('react');
+  const { Text } = await import('ink');
+  return {
+    GeminiSpinner: () => React.createElement(Text, null, '...'),
+  };
+});
+
 // Mock GeminiRespondingSpinner to disable animations (avoiding 'act()' warnings) without triggering screen reader mode.
 vi.mock('../ui/components/GeminiRespondingSpinner.js', async () => {
   const React = await import('react');
   const { Text } = await import('ink');
   return {
-    GeminiSpinner: () => React.createElement(Text, null, '...'),
     GeminiRespondingSpinner: ({
       nonRespondingDisplay,
     }: {
@@ -183,6 +211,9 @@ export class AppRig {
     this.setupEnvironment();
     resetSettingsCacheForTesting();
     this.settings = this.createRigSettings();
+
+    // Disable the terminal setup prompt globally for AppRig tests.
+    persistentStateMock.set('terminalSetupPromptShown', true);
 
     const approvalMode =
       this.options.configOverrides?.approvalMode ?? ApprovalMode.DEFAULT;
@@ -258,6 +289,10 @@ export class AppRig {
             enabled: false,
             hasSeenNudge: true,
           },
+          ui: {
+            hasSeenTerminalSetupPrompt: true,
+            showSpinner: false,
+          },
         },
         originalSettings: {},
       },
@@ -275,19 +310,23 @@ export class AppRig {
           enabled: false,
           hasSeenNudge: true,
         },
+        ui: {
+          hasSeenTerminalSetupPrompt: true,
+          showSpinner: false,
+        },
       },
     });
   }
 
   private stubRefreshAuth() {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const gcConfig = this.config as any;
     gcConfig.refreshAuth = async (authMethod: AuthType) => {
       gcConfig.modelAvailabilityService.reset();
 
       const newContentGeneratorConfig = {
         authType: authMethod,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+         
         proxy: gcConfig.getProxy(),
         apiKey: process.env['GEMINI_API_KEY'] || 'test-api-key',
       };
@@ -456,7 +495,7 @@ export class AppRig {
     const actualToolName = toolName === '*' ? undefined : toolName;
     this.config
       .getPolicyEngine()
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+       
       .removeRulesForTool(actualToolName as string, source);
     this.breakpointTools.delete(toolName);
   }
@@ -729,7 +768,7 @@ export class AppRig {
         .getGeminiClient()
         ?.getChatRecordingService();
       if (recordingService) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-type-assertion
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (recordingService as any).conversationFile = null;
       }
     }
@@ -749,7 +788,7 @@ export class AppRig {
     MockShellExecutionService.reset();
     ideContextStore.clear();
     // Forcefully clear IdeClient singleton promise
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-type-assertion
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (IdeClient as any).instancePromise = null;
     vi.clearAllMocks();
 
