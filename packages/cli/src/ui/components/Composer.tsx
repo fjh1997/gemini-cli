@@ -174,7 +174,9 @@ export const Composer = ({ isFocused = true }: { isFocused?: boolean }) => {
   }, [canShowShortcutsHint]);
 
   const shouldReserveSpaceForShortcutsHint =
-    settings.merged.ui.showShortcutsHint && !hideShortcutsHintForSuggestions;
+    settings.merged.ui.showShortcutsHint &&
+    !hideShortcutsHintForSuggestions &&
+    !hasPendingActionRequired;
   const showShortcutsHint =
     shouldReserveSpaceForShortcutsHint && showShortcutsHintDebounced;
   const showMinimalModeBleedThrough =

@@ -138,9 +138,9 @@ describe('useApprovalModeIndicator', () => {
     mockConfigInstance = new (Config as any)() as MockConfigInstanceShape;
   });
 
-  it('should initialize with ApprovalMode.AUTO_EDIT if config.getApprovalMode returns ApprovalMode.AUTO_EDIT', () => {
+  it('should initialize with ApprovalMode.AUTO_EDIT if config.getApprovalMode returns ApprovalMode.AUTO_EDIT', async () => {
     mockConfigInstance.getApprovalMode.mockReturnValue(ApprovalMode.AUTO_EDIT);
-    const { result } = renderHook(() =>
+    const { result } = await renderHook(() =>
       useApprovalModeIndicator({
         config: mockConfigInstance as unknown as ActualConfigType,
         addItem: vi.fn(),
@@ -150,9 +150,9 @@ describe('useApprovalModeIndicator', () => {
     expect(mockConfigInstance.getApprovalMode).toHaveBeenCalledTimes(1);
   });
 
-  it('should initialize with ApprovalMode.DEFAULT if config.getApprovalMode returns ApprovalMode.DEFAULT', () => {
+  it('should initialize with ApprovalMode.DEFAULT if config.getApprovalMode returns ApprovalMode.DEFAULT', async () => {
     mockConfigInstance.getApprovalMode.mockReturnValue(ApprovalMode.DEFAULT);
-    const { result } = renderHook(() =>
+    const { result } = await renderHook(() =>
       useApprovalModeIndicator({
         config: mockConfigInstance as unknown as ActualConfigType,
         addItem: vi.fn(),
@@ -162,9 +162,9 @@ describe('useApprovalModeIndicator', () => {
     expect(mockConfigInstance.getApprovalMode).toHaveBeenCalledTimes(1);
   });
 
-  it('should cycle the indicator and update config when Shift+Tab is pressed', () => {
+  it('should cycle the indicator and update config when Shift+Tab is pressed', async () => {
     mockConfigInstance.getApprovalMode.mockReturnValue(ApprovalMode.DEFAULT);
-    const { result } = renderHook(() =>
+    const { result } = await renderHook(() =>
       useApprovalModeIndicator({
         config: mockConfigInstance as unknown as ActualConfigType,
         addItem: vi.fn(),
@@ -185,9 +185,9 @@ describe('useApprovalModeIndicator', () => {
     expect(result.current).toBe(ApprovalMode.AUTO_EDIT);
   });
 
-  it('should not toggle if only one key or other keys combinations are pressed', () => {
+  it('should not toggle if only one key or other keys combinations are pressed', async () => {
     mockConfigInstance.getApprovalMode.mockReturnValue(ApprovalMode.DEFAULT);
-    renderHook(() =>
+    await renderHook(() =>
       useApprovalModeIndicator({
         config: mockConfigInstance as unknown as ActualConfigType,
         addItem: vi.fn(),
@@ -244,9 +244,9 @@ describe('useApprovalModeIndicator', () => {
     expect(mockConfigInstance.setApprovalMode).not.toHaveBeenCalled();
   });
 
-  it('should update indicator when config value changes externally (useEffect dependency)', () => {
+  it('should update indicator when config value changes externally (useEffect dependency)', async () => {
     mockConfigInstance.getApprovalMode.mockReturnValue(ApprovalMode.DEFAULT);
-    const { result, rerender } = renderHook(
+    const { result, rerender } = await renderHook(
       (props: { config: ActualConfigType; addItem: () => void }) =>
         useApprovalModeIndicator(props),
       {
@@ -273,7 +273,7 @@ describe('useApprovalModeIndicator', () => {
       mockConfigInstance.isTrustedFolder.mockReturnValue(false);
     });
 
-    it('should not enable AUTO_EDIT mode when Shift+Tab is pressed', () => {
+    it('should not enable AUTO_EDIT mode when Shift+Tab is pressed', async () => {
       mockConfigInstance.getApprovalMode.mockReturnValue(ApprovalMode.DEFAULT);
       mockConfigInstance.setApprovalMode.mockImplementation(() => {
         throw new Error(
@@ -281,7 +281,7 @@ describe('useApprovalModeIndicator', () => {
         );
       });
       const mockAddItem = vi.fn();
-      const { result } = renderHook(() =>
+      const { result } = await renderHook(() =>
         useApprovalModeIndicator({
           config: mockConfigInstance as unknown as ActualConfigType,
           addItem: mockAddItem,
@@ -306,12 +306,12 @@ describe('useApprovalModeIndicator', () => {
       expect(mockConfigInstance.getApprovalMode()).toBe(ApprovalMode.DEFAULT);
     });
 
-    it('should disable AUTO_EDIT mode when Shift+Tab is pressed', () => {
+    it('should disable AUTO_EDIT mode when Shift+Tab is pressed', async () => {
       mockConfigInstance.getApprovalMode.mockReturnValue(
         ApprovalMode.AUTO_EDIT,
       );
       const mockAddItem = vi.fn();
-      renderHook(() =>
+      await renderHook(() =>
         useApprovalModeIndicator({
           config: mockConfigInstance as unknown as ActualConfigType,
           addItem: mockAddItem,
@@ -331,7 +331,7 @@ describe('useApprovalModeIndicator', () => {
       expect(mockConfigInstance.getApprovalMode()).toBe(ApprovalMode.DEFAULT);
     });
 
-    it('should show a warning when trying to enable privileged modes', () => {
+    it('should show a warning when trying to enable privileged modes', async () => {
       // Mock the error thrown by setApprovalMode
       const errorMessage =
         'Cannot enable privileged approval modes in an untrusted folder.';
@@ -340,7 +340,7 @@ describe('useApprovalModeIndicator', () => {
       });
 
       const mockAddItem = vi.fn();
-      renderHook(() =>
+      await renderHook(() =>
         useApprovalModeIndicator({
           config: mockConfigInstance as unknown as ActualConfigType,
           addItem: mockAddItem,
@@ -367,12 +367,12 @@ describe('useApprovalModeIndicator', () => {
     });
   });
 
-  it('should call onApprovalModeChange when switching to AUTO_EDIT mode', () => {
+  it('should call onApprovalModeChange when switching to AUTO_EDIT mode', async () => {
     mockConfigInstance.getApprovalMode.mockReturnValue(ApprovalMode.DEFAULT);
 
     const mockOnApprovalModeChange = vi.fn();
 
-    renderHook(() =>
+    await renderHook(() =>
       useApprovalModeIndicator({
         config: mockConfigInstance as unknown as ActualConfigType,
         onApprovalModeChange: mockOnApprovalModeChange,
@@ -391,10 +391,10 @@ describe('useApprovalModeIndicator', () => {
     );
   });
 
-  it('should not call onApprovalModeChange when callback is not provided', () => {
+  it('should not call onApprovalModeChange when callback is not provided', async () => {
     mockConfigInstance.getApprovalMode.mockReturnValue(ApprovalMode.DEFAULT);
 
-    renderHook(() =>
+    await renderHook(() =>
       useApprovalModeIndicator({
         config: mockConfigInstance as unknown as ActualConfigType,
       }),
@@ -410,10 +410,10 @@ describe('useApprovalModeIndicator', () => {
     // Should not throw an error when callback is not provided
   });
 
-  it('should cycle to PLAN when allowPlanMode is true', () => {
+  it('should cycle to PLAN when allowPlanMode is true', async () => {
     mockConfigInstance.getApprovalMode.mockReturnValue(ApprovalMode.AUTO_EDIT);
 
-    renderHook(() =>
+    await renderHook(() =>
       useApprovalModeIndicator({
         config: mockConfigInstance as unknown as ActualConfigType,
         addItem: vi.fn(),
@@ -430,10 +430,10 @@ describe('useApprovalModeIndicator', () => {
     );
   });
 
-  it('should cycle to DEFAULT when allowPlanMode is false', () => {
+  it('should cycle to DEFAULT when allowPlanMode is false', async () => {
     mockConfigInstance.getApprovalMode.mockReturnValue(ApprovalMode.AUTO_EDIT);
 
-    renderHook(() =>
+    await renderHook(() =>
       useApprovalModeIndicator({
         config: mockConfigInstance as unknown as ActualConfigType,
         addItem: vi.fn(),
