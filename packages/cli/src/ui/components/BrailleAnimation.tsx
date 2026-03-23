@@ -25,11 +25,6 @@ const DOTS = [
 
 const COMPOSITE_SEQUENCE = [2, 3, 4, 5, 4, 3];
 
-export const GEMINI_SPINNER = {
-  interval: 80,
-  frames: ['⢎⠁', '⠎⠑', '⠊⠱', '⠈⡱', '⢀⡱', '⢄⡰', '⢆⡠', '⢎⡀'],
-};
-
 export type BrailleVariant =
   | 'Static'
   | 'Small'
@@ -53,7 +48,7 @@ interface BrailleAnimationProps {
  * - 'Composite': Dynamic length [2, 3, 4, 5, 4, 3] changing every 8 ticks
  */
 export const BrailleAnimation: React.FC<BrailleAnimationProps> = ({
-  variant = 'Long',
+  variant = 'Composite',
   interval = 80,
 }) => {
   const [tick, setTick] = useState(0);

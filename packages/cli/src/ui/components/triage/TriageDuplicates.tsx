@@ -15,8 +15,7 @@ import {
 import { useKeypress } from '../../hooks/useKeypress.js';
 import { Command } from '../../key/keyMatchers.js';
 import { useKeyMatchers } from '../../hooks/useKeyMatchers.js';
-import { CliSpinner } from '../CliSpinner.js';
-import { GEMINI_SPINNER } from '../BrailleAnimation.js';
+import { BrailleAnimation } from '../BrailleAnimation.js';
 
 interface Issue {
   number: number;
@@ -726,7 +725,7 @@ Return a JSON object with:
   if (state.status === 'loading') {
     return (
       <Box>
-        <CliSpinner spinner={GEMINI_SPINNER} />
+        <BrailleAnimation />
         <Text> {state.message}</Text>
       </Box>
     );
@@ -922,7 +921,7 @@ Return a JSON object with:
             justifyContent="center"
             height={VISIBLE_CANDIDATES * 2}
           >
-            <CliSpinner spinner={GEMINI_SPINNER} />
+            <BrailleAnimation />
             <Text> {state.message}</Text>
           </Box>
         ) : (

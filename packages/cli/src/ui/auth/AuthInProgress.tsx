@@ -7,10 +7,9 @@
 import type React from 'react';
 import { useState, useEffect } from 'react';
 import { Box, Text } from 'ink';
-import { CliSpinner } from '../components/CliSpinner.js';
+import { BrailleAnimation } from '../components/BrailleAnimation.js';
 import { theme } from '../semantic-colors.js';
 import { useKeypress } from '../hooks/useKeypress.js';
-import { GEMINI_SPINNER } from '../components/BrailleAnimation.js';
 
 interface AuthInProgressProps {
   onTimeout: () => void;
@@ -54,8 +53,8 @@ export function AuthInProgress({
       ) : (
         <Box>
           <Text>
-            <CliSpinner spinner={GEMINI_SPINNER} /> Waiting for
-            authentication... (Press Esc or Ctrl+C to cancel)
+            <BrailleAnimation /> Waiting for authentication... (Press Esc or
+            Ctrl+C to cancel)
           </Text>
         </Box>
       )}

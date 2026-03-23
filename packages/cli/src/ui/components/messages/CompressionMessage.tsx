@@ -6,11 +6,10 @@
 
 import { Box, Text } from 'ink';
 import type { CompressionProps } from '../../types.js';
-import { CliSpinner } from '../CliSpinner.js';
+import { BrailleAnimation } from '../BrailleAnimation.js';
 import { theme } from '../../semantic-colors.js';
 import { SCREEN_READER_MODEL_PREFIX } from '../../textConstants.js';
 import { CompressionStatus } from '@google/gemini-cli-core';
-import { GEMINI_SPINNER } from '../BrailleAnimation.js';
 
 export interface CompressionDisplayProps {
   compression: CompressionProps;
@@ -62,7 +61,7 @@ export function CompressionMessage({
     <Box flexDirection="row">
       <Box marginRight={1}>
         {isPending ? (
-          <CliSpinner spinner={GEMINI_SPINNER} />
+          <BrailleAnimation />
         ) : (
           <Text color={theme.text.accent}>✦</Text>
         )}

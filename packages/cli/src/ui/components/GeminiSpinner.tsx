@@ -11,13 +11,12 @@ import { CliSpinner } from './CliSpinner.js';
 import type { SpinnerName } from 'cli-spinners';
 import { Colors } from '../colors.js';
 import tinygradient from 'tinygradient';
-import type { GEMINI_SPINNER } from './BrailleAnimation.js';
 import { BrailleAnimation } from './BrailleAnimation.js';
 
 const COLOR_CYCLE_DURATION_MS = 4000;
 
 interface GeminiSpinnerProps {
-  spinnerType?: SpinnerName | typeof GEMINI_SPINNER | 'dynamic';
+  spinnerType?: SpinnerName | 'dynamic';
   altText?: string;
 }
 
@@ -57,14 +56,10 @@ export const GeminiSpinner: React.FC<GeminiSpinnerProps> = ({
 
   const renderSpinner = () => {
     if (spinnerType === 'dynamic') {
-      return <BrailleAnimation variant="Composite" />;
+      return <BrailleAnimation />;
     }
 
-    return typeof spinnerType === 'string' ? (
-      <CliSpinner type={spinnerType} />
-    ) : (
-      <CliSpinner spinner={spinnerType} />
-    );
+    return <CliSpinner type={spinnerType} />;
   };
 
   return isScreenReaderEnabled ? (

@@ -15,15 +15,13 @@ import {
 } from '../textConstants.js';
 import { theme } from '../semantic-colors.js';
 import { GeminiSpinner } from './GeminiSpinner.js';
-import type { GEMINI_SPINNER } from './BrailleAnimation.js';
-
 interface GeminiRespondingSpinnerProps {
   /**
-   * Optional string to display when not in Responding state.
+   * Optional string or component to display when not in Responding state.
    * If not provided and not Responding, renders null.
    */
-  nonRespondingDisplay?: string;
-  spinnerType?: SpinnerName | typeof GEMINI_SPINNER | 'dynamic';
+  nonRespondingDisplay?: React.ReactNode;
+  spinnerType?: SpinnerName | 'dynamic';
 }
 
 export const GeminiRespondingSpinner: React.FC<
@@ -41,10 +39,14 @@ export const GeminiRespondingSpinner: React.FC<
   }
 
   if (nonRespondingDisplay) {
-    return isScreenReaderEnabled ? (
-      <Text>{SCREEN_READER_LOADING}</Text>
-    ) : (
+    if (isScreenReaderEnabled) {
+      return <Text>{SCREEN_READER_LOADING}</Text>;
+    }
+
+    return typeof nonRespondingDisplay === 'string' ? (
       <Text color={theme.text.primary}>{nonRespondingDisplay}</Text>
+    ) : (
+      <>{nonRespondingDisplay}</>
     );
   }
 
