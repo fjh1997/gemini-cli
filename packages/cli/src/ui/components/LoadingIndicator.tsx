@@ -11,6 +11,7 @@ import { theme } from '../semantic-colors.js';
 import { useStreamingContext } from '../contexts/StreamingContext.js';
 import { StreamingState } from '../types.js';
 import { GeminiRespondingSpinner } from './GeminiRespondingSpinner.js';
+import { GEMINI_SPINNER } from './BrailleAnimation.js';
 import { formatDuration } from '../utils/formatters.js';
 import { useTerminalSize } from '../hooks/useTerminalSize.js';
 import { isNarrowWidth } from '../utils/isNarrowWidth.js';
@@ -77,7 +78,7 @@ export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
           <GeminiRespondingSpinner
             nonRespondingDisplay={
               streamingState === StreamingState.WaitingForConfirmation
-                ? '⠏'
+                ? GEMINI_SPINNER.frames[0]
                 : ''
             }
           />
@@ -119,7 +120,7 @@ export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
             <GeminiRespondingSpinner
               nonRespondingDisplay={
                 streamingState === StreamingState.WaitingForConfirmation
-                  ? '⠏'
+                  ? GEMINI_SPINNER.frames[0]
                   : ''
               }
             />

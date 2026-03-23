@@ -15,6 +15,7 @@ import {
 } from '../textConstants.js';
 import { theme } from '../semantic-colors.js';
 import { GeminiSpinner } from './GeminiSpinner.js';
+import type { GEMINI_SPINNER } from './BrailleAnimation.js';
 
 interface GeminiRespondingSpinnerProps {
   /**
@@ -22,12 +23,12 @@ interface GeminiRespondingSpinnerProps {
    * If not provided and not Responding, renders null.
    */
   nonRespondingDisplay?: string;
-  spinnerType?: SpinnerName;
+  spinnerType?: SpinnerName | typeof GEMINI_SPINNER | 'dynamic';
 }
 
 export const GeminiRespondingSpinner: React.FC<
   GeminiRespondingSpinnerProps
-> = ({ nonRespondingDisplay, spinnerType = 'dots' }) => {
+> = ({ nonRespondingDisplay, spinnerType = 'dynamic' }) => {
   const streamingState = useStreamingContext();
   const isScreenReaderEnabled = useIsScreenReaderEnabled();
   if (streamingState === StreamingState.Responding) {

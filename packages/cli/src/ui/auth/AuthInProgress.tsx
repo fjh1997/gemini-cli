@@ -10,6 +10,7 @@ import { Box, Text } from 'ink';
 import { CliSpinner } from '../components/CliSpinner.js';
 import { theme } from '../semantic-colors.js';
 import { useKeypress } from '../hooks/useKeypress.js';
+import { GEMINI_SPINNER } from '../components/BrailleAnimation.js';
 
 interface AuthInProgressProps {
   onTimeout: () => void;
@@ -53,8 +54,8 @@ export function AuthInProgress({
       ) : (
         <Box>
           <Text>
-            <CliSpinner type="dots" /> Waiting for authentication... (Press Esc
-            or Ctrl+C to cancel)
+            <CliSpinner spinner={GEMINI_SPINNER} /> Waiting for
+            authentication... (Press Esc or Ctrl+C to cancel)
           </Text>
         </Box>
       )}

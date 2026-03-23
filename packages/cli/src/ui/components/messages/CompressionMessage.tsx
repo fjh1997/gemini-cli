@@ -10,6 +10,7 @@ import { CliSpinner } from '../CliSpinner.js';
 import { theme } from '../../semantic-colors.js';
 import { SCREEN_READER_MODEL_PREFIX } from '../../textConstants.js';
 import { CompressionStatus } from '@google/gemini-cli-core';
+import { GEMINI_SPINNER } from '../BrailleAnimation.js';
 
 export interface CompressionDisplayProps {
   compression: CompressionProps;
@@ -61,7 +62,7 @@ export function CompressionMessage({
     <Box flexDirection="row">
       <Box marginRight={1}>
         {isPending ? (
-          <CliSpinner type="dots" />
+          <CliSpinner spinner={GEMINI_SPINNER} />
         ) : (
           <Text color={theme.text.accent}>✦</Text>
         )}

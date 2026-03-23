@@ -7,7 +7,8 @@
 import type React from 'react';
 import { Box, Text } from 'ink';
 import { theme } from '../../semantic-colors.js';
-import Spinner from 'ink-spinner';
+import { CliSpinner } from '../CliSpinner.js';
+import { GEMINI_SPINNER } from '../BrailleAnimation.js';
 import type {
   SubagentProgress,
   SubagentActivityItem,
@@ -100,7 +101,7 @@ export const SubagentProgressDisplay: React.FC<
           } else if (item.type === 'tool_call') {
             const statusSymbol =
               item.status === 'running' ? (
-                <Spinner type="dots" />
+                <CliSpinner spinner={GEMINI_SPINNER} />
               ) : item.status === 'completed' ? (
                 <Text color={theme.status.success}>{TOOL_STATUS.SUCCESS}</Text>
               ) : item.status === 'cancelled' ? (
