@@ -53,10 +53,6 @@ function getSeccompBpfPath(): string {
   const SECCOMP_RET_ERRNO = 0x00050000;
   const SECCOMP_RET_ALLOW = 0x7fff0000;
 
-  // Seccomp BPF filter to:
-  // 1. Enforce native architecture (prevents syscall-aliasing).
-  // 2. Block 'ptrace' (prevents sandbox escapes via process control).
-  // 3. Allow all other syscalls (namespaces handle the rest).
   const instructions = [
     { code: 0x20, jt: 0, jf: 0, k: 4 }, // Load arch
     { code: 0x15, jt: 1, jf: 0, k: AUDIT_ARCH }, // Jump to kill if arch != native arch
@@ -101,7 +97,7 @@ export class LinuxSandboxManager implements SandboxManager {
     const bwrapArgs: string[] = [
       ...this.getBaseBwrapArgs(),
       ...this.getNetworkArgs(req.policy?.networkAccess),
-      ...(await this.getPermissionsArgs(req.policy)),
+      ...(await this.getPolicyArgs(req.policy)),
     ];
 
     const bpfPath = getSeccompBpfPath();
@@ -168,9 +164,7 @@ export class LinuxSandboxManager implements SandboxManager {
   /**
    * Translates execution policy into filesystem binding arguments.
    */
-  private async getPermissionsArgs(
-    policy?: ExecutionPolicy,
-  ): Promise<string[]> {
+  private async getPolicyArgs(policy?: ExecutionPolicy): Promise<string[]> {
     const args: string[] = [];
     const normalizedWorkspace = this.normalizePath(this.options.workspace);
 

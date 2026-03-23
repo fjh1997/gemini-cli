@@ -33,7 +33,7 @@ describe('MacOsSandboxManager', () => {
     vi.restoreAllMocks();
   });
 
-  describe('prepareCommand', () => {
+  describe('Command Preparation', () => {
     it('should build a strict allowlist profile allowing the workspace via param', async () => {
       const result = await manager.prepareCommand({
         command: 'echo',
@@ -54,98 +54,6 @@ describe('MacOsSandboxManager', () => {
       expect(result.args).toContain('-D');
       expect(result.args).toContain('WORKSPACE=/test/workspace');
       expect(result.args).toContain(`TMPDIR=${os.tmpdir()}`);
-    });
-
-    it('should allow network when networkAccess is true in policy', async () => {
-      const result = await manager.prepareCommand({
-        command: 'curl',
-        args: ['example.com'],
-        cwd: mockWorkspace,
-        env: {},
-        policy: { networkAccess: true },
-      });
-
-      const profile = result.args[1];
-      expect(profile).toContain('(allow network*)');
-    });
-
-    it('should parameterize allowed paths and normalize them', async () => {
-      vi.spyOn(fs, 'realpath').mockImplementation((p) => {
-        if (p === '/test/symlink') return Promise.resolve('/test/real_path');
-        return Promise.resolve(p as string);
-      });
-
-      const result = await manager.prepareCommand({
-        command: 'ls',
-        args: ['/custom/path1'],
-        cwd: mockWorkspace,
-        env: {},
-        policy: {
-          allowedPaths: ['/custom/path1', '/test/symlink'],
-        },
-      });
-
-      const profile = result.args[1];
-      expect(profile).toContain('(subpath (param "ALLOWED_PATH_0"))');
-      expect(profile).toContain('(subpath (param "ALLOWED_PATH_1"))');
-
-      expect(result.args).toContain('-D');
-      expect(result.args).toContain('ALLOWED_PATH_0=/custom/path1');
-      expect(result.args).toContain('ALLOWED_PATH_1=/test/real_path');
-    });
-
-    it('should generate deny rules for forbiddenPaths', async () => {
-      vi.spyOn(fs, 'realpath').mockImplementation((p) => {
-        if (p === '/test/symlink') return Promise.resolve('/test/real_path');
-        return Promise.resolve(p as string);
-      });
-
-      const result = await manager.prepareCommand({
-        command: 'echo',
-        args: ['hello'],
-        cwd: mockWorkspace,
-        env: {},
-        policy: {
-          forbiddenPaths: ['/custom/path1', '/test/symlink'],
-        },
-      });
-
-      const profile = result.args[1];
-      expect(profile).toContain(
-        '(deny file-read* file-write* (subpath (param "FORBIDDEN_PATH_0")))',
-      );
-      expect(profile).toContain(
-        '(deny file-read* file-write* (subpath (param "FORBIDDEN_PATH_1")))',
-      );
-
-      expect(result.args).toContain('-D');
-      expect(result.args).toContain('FORBIDDEN_PATH_0=/custom/path1');
-      expect(result.args).toContain('FORBIDDEN_PATH_1=/test/real_path');
-    });
-
-    it('should prioritize forbiddenPaths over allowedPaths by placing deny rules after allow rules', async () => {
-      const result = await manager.prepareCommand({
-        command: 'echo',
-        args: ['hello'],
-        cwd: mockWorkspace,
-        env: {},
-        policy: {
-          allowedPaths: ['/test/conflict_path'],
-          forbiddenPaths: ['/test/conflict_path'],
-        },
-      });
-
-      const profile = result.args[1];
-      const allowIndex = profile.indexOf(
-        '(allow file-read* file-write* (subpath (param "ALLOWED_PATH_0")))',
-      );
-      const denyIndex = profile.indexOf(
-        '(deny file-read* file-write* (subpath (param "FORBIDDEN_PATH_0")))',
-      );
-
-      expect(allowIndex).toBeGreaterThan(-1);
-      expect(denyIndex).toBeGreaterThan(-1);
-      expect(denyIndex).toBeGreaterThan(allowIndex); // Deny must come after allow to override it
     });
 
     it('should format the executable and arguments correctly for sandbox-exec', async () => {
@@ -172,7 +80,109 @@ describe('MacOsSandboxManager', () => {
 
       expect(result.cwd).toBe('/test/different/cwd');
     });
+  });
 
+  describe('Network Access', () => {
+    it('should allow network when networkAccess is true in policy', async () => {
+      const result = await manager.prepareCommand({
+        command: 'curl',
+        args: ['example.com'],
+        cwd: mockWorkspace,
+        env: {},
+        policy: { networkAccess: true },
+      });
+
+      const profile = result.args[1];
+      expect(profile).toContain('(allow network*)');
+    });
+  });
+
+  describe('File System Access', () => {
+    describe('Allowed Paths', () => {
+      it('should parameterize allowed paths and normalize them', async () => {
+        vi.spyOn(fs, 'realpath').mockImplementation((p) => {
+          if (p === '/test/symlink') return Promise.resolve('/test/real_path');
+          return Promise.resolve(p as string);
+        });
+
+        const result = await manager.prepareCommand({
+          command: 'ls',
+          args: ['/custom/path1'],
+          cwd: mockWorkspace,
+          env: {},
+          policy: {
+            allowedPaths: ['/custom/path1', '/test/symlink'],
+          },
+        });
+
+        const profile = result.args[1];
+        expect(profile).toContain('(subpath (param "ALLOWED_PATH_0"))');
+        expect(profile).toContain('(subpath (param "ALLOWED_PATH_1"))');
+
+        expect(result.args).toContain('-D');
+        expect(result.args).toContain('ALLOWED_PATH_0=/custom/path1');
+        expect(result.args).toContain('ALLOWED_PATH_1=/test/real_path');
+      });
+    });
+
+    describe('Forbidden Paths', () => {
+      it('should generate deny rules for forbiddenPaths', async () => {
+        vi.spyOn(fs, 'realpath').mockImplementation((p) => {
+          if (p === '/test/symlink') return Promise.resolve('/test/real_path');
+          return Promise.resolve(p as string);
+        });
+
+        const result = await manager.prepareCommand({
+          command: 'echo',
+          args: ['hello'],
+          cwd: mockWorkspace,
+          env: {},
+          policy: {
+            forbiddenPaths: ['/custom/path1', '/test/symlink'],
+          },
+        });
+
+        const profile = result.args[1];
+        expect(profile).toContain(
+          '(deny file-read* file-write* (subpath (param "FORBIDDEN_PATH_0")))',
+        );
+        expect(profile).toContain(
+          '(deny file-read* file-write* (subpath (param "FORBIDDEN_PATH_1")))',
+        );
+
+        expect(result.args).toContain('-D');
+        expect(result.args).toContain('FORBIDDEN_PATH_0=/custom/path1');
+        expect(result.args).toContain('FORBIDDEN_PATH_1=/test/real_path');
+      });
+
+      it('should prioritize forbiddenPaths over allowedPaths by placing deny rules after allow rules', async () => {
+        const result = await manager.prepareCommand({
+          command: 'echo',
+          args: ['hello'],
+          cwd: mockWorkspace,
+          env: {},
+          policy: {
+            allowedPaths: ['/test/conflict_path'],
+            forbiddenPaths: ['/test/conflict_path'],
+          },
+        });
+
+        const profile = result.args[1];
+        const allowIndex = profile.indexOf(
+          '(allow file-read* file-write* (subpath (param "ALLOWED_PATH_0")))',
+        );
+        const denyIndex = profile.indexOf(
+          '(deny file-read* file-write* (subpath (param "FORBIDDEN_PATH_0")))',
+        );
+
+        expect(allowIndex).toBeGreaterThan(-1);
+        expect(denyIndex).toBeGreaterThan(-1);
+        expect(denyIndex).toBeGreaterThan(allowIndex); // Deny must come after allow to override it
+      });
+    });
+  });
+
+  describe('Environment Sanitization', () => {
     it('should apply environment sanitization via the default mechanisms', async () => {
       const result = await manager.prepareCommand({
         command: 'echo',

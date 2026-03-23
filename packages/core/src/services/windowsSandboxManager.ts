@@ -164,6 +164,7 @@ export class WindowsSandboxManager implements SandboxManager {
       await this.grantLowIntegrityAccess(allowedPath);
     }
 
+    // Denies access to forbiddenPaths for Low Integrity processes.
     const forbiddenPaths = sanitizePaths(req.policy?.forbiddenPaths) || [];
     for (const forbiddenPath of forbiddenPaths) {
       await this.denyLowIntegrityAccess(forbiddenPath);
@@ -243,17 +244,10 @@ export class WindowsSandboxManager implements SandboxManager {
     // S-1-16-4096 is the SID for "Low Mandatory Level" (Low Integrity)
     const LOW_INTEGRITY_SID = '*S-1-16-4096';
 
-    // icacls flags:
-    // (OI) - Object Inherit: Inherit to files.
-    // (CI) - Container Inherit: Inherit to subfolders.
-    // (F)  - Full Access: Deny all permissions (read, write, execute).
-    // We intentionally omit /T for performance reasons. Applying a Deny ACE
-    // recursively across massive directories is unacceptably slow.
-    // By using (OI)(CI), new files inherit the Deny rule. For existing files,
-    // Windows dynamically evaluates permissions up the tree.
-    // The minor security risk is that if an existing file deep inside has an
-    // *explicit* Allow ACE, it might bypass this inherited Deny rule.
-
+    // icacls flags: (OI) Object Inherit, (CI) Container Inherit, (F) Full Access Deny.
+    // Omit /T (recursive) for performance; (OI)(CI) ensures inheritance for new items.
+    // Windows dynamically evaluates existing items, though deep explicit Allow ACEs
+    // could potentially bypass this inherited Deny rule.
     const DENY_ALL_INHERIT = '(OI)(CI)(F)';
 
     // Verify path exists; icacls fails on non-existent paths.

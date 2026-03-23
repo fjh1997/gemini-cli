@@ -29,157 +29,169 @@ describe('WindowsSandboxManager', () => {
     vi.restoreAllMocks();
   });
 
-  it('should prepare a GeminiSandbox.exe command', async () => {
-    const req: SandboxRequest = {
-      command: 'whoami',
-      args: ['/groups'],
-      cwd: '/test/cwd',
-      env: { TEST_VAR: 'test_value' },
-      policy: {
-        networkAccess: false,
-      },
-    };
-
-    const result = await manager.prepareCommand(req);
-
-    expect(result.program).toContain('GeminiSandbox.exe');
-    expect(result.args).toEqual(['0', '/test/cwd', 'whoami', '/groups']);
-  });
-
-  it('should handle networkAccess from config', async () => {
-    const req: SandboxRequest = {
-      command: 'whoami',
-      args: [],
-      cwd: '/test/cwd',
-      env: {},
-      policy: {
-        networkAccess: true,
-      },
-    };
-
-    const result = await manager.prepareCommand(req);
-    expect(result.args[0]).toBe('1');
-  });
-
-  it('should sanitize environment variables', async () => {
-    const req: SandboxRequest = {
-      command: 'test',
-      args: [],
-      cwd: '/test/cwd',
-      env: {
-        API_KEY: 'secret',
-        PATH: '/usr/bin',
-      },
-      policy: {
-        sanitizationConfig: {
-          allowedEnvironmentVariables: ['PATH'],
-          blockedEnvironmentVariables: ['API_KEY'],
-          enableEnvironmentVariableRedaction: true,
+  describe('Command Preparation', () => {
+    it('should prepare a GeminiSandbox.exe command', async () => {
+      const req: SandboxRequest = {
+        command: 'whoami',
+        args: ['/groups'],
+        cwd: '/test/cwd',
+        env: { TEST_VAR: 'test_value' },
+        policy: {
+          networkAccess: false,
         },
-      },
-    };
+      };
 
-    const result = await manager.prepareCommand(req);
-    expect(result.env['PATH']).toBe('/usr/bin');
-    expect(result.env['API_KEY']).toBeUndefined();
+      const result = await manager.prepareCommand(req);
+
+      expect(result.program).toContain('GeminiSandbox.exe');
+      expect(result.args).toEqual(['0', '/test/cwd', 'whoami', '/groups']);
+    });
   });
 
-  it('should grant Low Integrity access to the workspace and allowed paths', async () => {
-    const req: SandboxRequest = {
-      command: 'test',
-      args: [],
-      cwd: '/test/cwd',
-      env: {},
-      policy: {
-        allowedPaths: ['/test/allowed1'],
-      },
-    };
+  describe('Network Access', () => {
+    it('should handle networkAccess from config', async () => {
+      const req: SandboxRequest = {
+        command: 'whoami',
+        args: [],
+        cwd: '/test/cwd',
+        env: {},
+        policy: {
+          networkAccess: true,
+        },
+      };
 
-    await manager.prepareCommand(req);
-
-    expect(spawnAsync).toHaveBeenCalledWith('icacls', [
-      path.resolve('/test/workspace'),
-      '/setintegritylevel',
-      'Low',
-    ]);
-
-    expect(spawnAsync).toHaveBeenCalledWith('icacls', [
-      path.resolve('/test/allowed1'),
-      '/setintegritylevel',
-      'Low',
-    ]);
+      const result = await manager.prepareCommand(req);
+      expect(result.args[0]).toBe('1');
+    });
   });
 
-  it('applies icacls deny to forbiddenPaths', async () => {
-    const req: SandboxRequest = {
-      command: 'echo',
-      args: ['hello'],
-      cwd: '/test/cwd',
-      env: {},
-      policy: {
-        forbiddenPaths: ['/test/forbidden1'],
-      },
-    };
+  describe('File System Access', () => {
+    describe('Allowed Paths', () => {
+      it('should grant Low Integrity access to the workspace and allowed paths', async () => {
+        const req: SandboxRequest = {
+          command: 'test',
+          args: [],
+          cwd: '/test/cwd',
+          env: {},
+          policy: {
+            allowedPaths: ['/test/allowed1'],
+          },
+        };
 
-    await manager.prepareCommand(req);
+        await manager.prepareCommand(req);
 
-    expect(spawnAsync).toHaveBeenCalledWith('icacls', [
-      path.resolve('/test/forbidden1'),
-      '/deny',
-      '*S-1-16-4096:(OI)(CI)(F)',
-    ]);
-  });
+        expect(spawnAsync).toHaveBeenCalledWith('icacls', [
+          path.resolve('/test/workspace'),
+          '/setintegritylevel',
+          'Low',
+        ]);
 
-  it('prioritizes forbiddenPaths over allowedPaths by applying an explicit deny', async () => {
-    const conflictPath = '/test/conflict_path';
-    const req: SandboxRequest = {
-      command: 'echo',
-      args: ['hello'],
-      cwd: '/test/cwd',
-      env: {},
-      policy: {
-        allowedPaths: [conflictPath],
-        forbiddenPaths: [conflictPath],
-      },
-    };
-
-    await manager.prepareCommand(req);
-
-    // Should grant allow
-    expect(spawnAsync).toHaveBeenCalledWith('icacls', [
-      path.resolve(conflictPath),
-      '/setintegritylevel',
-      'Low',
-    ]);
-
-    // Should also apply deny, which always overrides allow in Windows ACLs
-    expect(spawnAsync).toHaveBeenCalledWith('icacls', [
-      path.resolve(conflictPath),
-      '/deny',
-      '*S-1-16-4096:(OI)(CI)(F)',
-    ]);
-  });
-
-  it('throws an error if icacls deny fails', async () => {
-    vi.mocked(spawnAsync).mockImplementation((command, args) => {
-      if (command === 'icacls' && args.includes('/deny')) {
-        return Promise.reject(new Error('icacls failed'));
-      }
-      return Promise.resolve({ stdout: '', stderr: '' });
+        expect(spawnAsync).toHaveBeenCalledWith('icacls', [
+          path.resolve('/test/allowed1'),
+          '/setintegritylevel',
+          'Low',
+        ]);
+      });
     });
 
-    const req: SandboxRequest = {
-      command: 'echo',
-      args: ['hello'],
-      cwd: '/test/cwd',
-      env: {},
-      policy: {
-        forbiddenPaths: ['/test/forbidden1'],
-      },
-    };
+    describe('Forbidden Paths', () => {
+      it('applies icacls deny to forbiddenPaths', async () => {
+        const req: SandboxRequest = {
+          command: 'echo',
+          args: ['hello'],
+          cwd: '/test/cwd',
+          env: {},
+          policy: {
+            forbiddenPaths: ['/test/forbidden1'],
+          },
+        };
 
-    await expect(manager.prepareCommand(req)).rejects.toThrow(
-      'Failed to deny access to forbidden path',
-    );
+        await manager.prepareCommand(req);
+
+        expect(spawnAsync).toHaveBeenCalledWith('icacls', [
+          path.resolve('/test/forbidden1'),
+          '/deny',
+          '*S-1-16-4096:(OI)(CI)(F)',
+        ]);
+      });
+
+      it('prioritizes forbiddenPaths over allowedPaths by applying an explicit deny', async () => {
+        const conflictPath = '/test/conflict_path';
+        const req: SandboxRequest = {
+          command: 'echo',
+          args: ['hello'],
+          cwd: '/test/cwd',
+          env: {},
+          policy: {
+            allowedPaths: [conflictPath],
+            forbiddenPaths: [conflictPath],
+          },
+        };
+
+        await manager.prepareCommand(req);
+
+        // Should grant allow
+        expect(spawnAsync).toHaveBeenCalledWith('icacls', [
+          path.resolve(conflictPath),
+          '/setintegritylevel',
+          'Low',
+        ]);
+
+        // Should also apply deny, which always overrides allow in Windows ACLs
+        expect(spawnAsync).toHaveBeenCalledWith('icacls', [
+          path.resolve(conflictPath),
+          '/deny',
+          '*S-1-16-4096:(OI)(CI)(F)',
+        ]);
+      });
+
+      it('throws an error if icacls deny fails', async () => {
+        vi.mocked(spawnAsync).mockImplementation((command, args) => {
+          if (command === 'icacls' && args.includes('/deny')) {
+            return Promise.reject(new Error('icacls failed'));
+          }
+          return Promise.resolve({ stdout: '', stderr: '' });
+        });
+
+        const req: SandboxRequest = {
+          command: 'echo',
+          args: ['hello'],
+          cwd: '/test/cwd',
+          env: {},
+          policy: {
+            forbiddenPaths: ['/test/forbidden1'],
+          },
+        };
+
+        await expect(manager.prepareCommand(req)).rejects.toThrow(
+          'Failed to deny access to forbidden path',
+        );
+      });
+    });
+  });
+
+  describe('Environment Sanitization', () => {
+    it('should sanitize environment variables', async () => {
+      const req: SandboxRequest = {
+        command: 'test',
+        args: [],
+        cwd: '/test/cwd',
+        env: {
+          API_KEY: 'secret',
+          PATH: '/usr/bin',
+        },
+        policy: {
+          sanitizationConfig: {
+            allowedEnvironmentVariables: ['PATH'],
+            blockedEnvironmentVariables: ['API_KEY'],
+            enableEnvironmentVariableRedaction: true,
+          },
+        },
+      };
+
+      const result = await manager.prepareCommand(req);
+      expect(result.env['PATH']).toBe('/usr/bin');
+      expect(result.env['API_KEY']).toBeUndefined();
+    });
   });
 });
