@@ -12,6 +12,7 @@ import {
   type ExtensionInstallMetadata,
   type GeminiCLIExtension,
   type CustomTheme,
+  type MCPServerConfig,
 } from '@google/gemini-cli-core';
 import {
   EXTENSIONS_CONFIG_FILENAME,
@@ -207,7 +208,8 @@ async function resolveMcpServers(
       }
     } else {
       // It's a Record<string, MCPServerConfig>
-      mcpServers = hydratedConfig.mcpServers;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+      mcpServers = hydratedConfig.mcpServers as Record<string, MCPServerConfig>;
     }
   }
 
@@ -292,10 +294,7 @@ export async function createOpenPlugin(
     homepage: config.homepage,
     logo: config.logo,
     keywords: config.keywords,
-<<<<<<< HEAD
-=======
     // Features partially enabled for Open Plugins
->>>>>>> 559a26635 (feat(cli): support Open Plugins MCP servers)
     contextFiles: [],
     mcpServers: config.mcpServers,
     excludeTools: undefined,
