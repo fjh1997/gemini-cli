@@ -205,6 +205,7 @@ your specific environment.
 
 ```toml
 [[rule]]
+toolName = "*"
 mcpName = "*"
 toolAnnotations = { readOnlyHint = true }
 decision = "allow"
