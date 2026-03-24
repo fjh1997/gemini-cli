@@ -1407,7 +1407,8 @@ Logging in with Google... Restarting Gemini CLI to continue.
     !!slashCommands &&
     (streamingState === StreamingState.Idle ||
       streamingState === StreamingState.Responding) &&
-    !proQuotaRequest;
+    !proQuotaRequest &&
+    !copyModeEnabled;
 
   const [controlsHeight, setControlsHeight] = useState(0);
   const [lastNonCopyControlsHeight, setLastNonCopyControlsHeight] = useState(0);
