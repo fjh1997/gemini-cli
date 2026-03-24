@@ -9,6 +9,7 @@ import * as path from 'node:path';
 import { z } from 'zod';
 import {
   loadSkillsFromDir,
+  loadAgentsFromDirectory,
   type ExtensionInstallMetadata,
   type GeminiCLIExtension,
   type CustomTheme,
@@ -279,6 +280,12 @@ export async function createOpenPlugin(
     hydrationContext,
   );
 
+  const agents = await resolvePluginAgents(
+    pluginDir,
+    config.name,
+    hydrationContext,
+  );
+
   return {
     name: config.name,
     version: config.version,
@@ -301,7 +308,7 @@ export async function createOpenPlugin(
     settings: config.settings,
     resolvedSettings: undefined,
     skills,
-    agents: undefined,
+    agents,
     themes: config.themes,
   };
 }
@@ -324,6 +331,28 @@ async function resolvePluginSkills(
   return discoveredSkills.map((skill) => ({
     ...recursivelyHydrateStrings(skill, hydrationContext),
     name: `${pluginName}:${skill.name}`,
+    extensionName: pluginName,
+  }));
+}
+
+/**
+ * Discovers and namespaces agents for an Open Plugin.
+ */
+async function resolvePluginAgents(
+  pluginDir: string,
+  pluginName: string,
+  hydrationContext: Record<string, string>,
+): Promise<GeminiCLIExtension['agents']> {
+  const agentsDir = path.join(pluginDir, 'agents');
+  const agentLoadResult = await loadAgentsFromDirectory(agentsDir, pluginDir);
+
+  if (agentLoadResult.agents.length === 0) {
+    return undefined;
+  }
+
+  return agentLoadResult.agents.map((agent) => ({
+    ...recursivelyHydrateStrings(agent, hydrationContext),
+    name: `${pluginName}:${agent.name}`,
     extensionName: pluginName,
   }));
 }
